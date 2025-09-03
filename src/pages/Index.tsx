@@ -48,10 +48,10 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
-            <Link to="/dashboard">
+            <Link to="/auth">
               <Button size="lg" className="bg-gradient-primary shadow-elegant hover:shadow-glow transition-all duration-300">
                 <Activity className="h-5 w-5 mr-2" />
-                View Dashboard
+                Get Started
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
@@ -201,7 +201,7 @@ const Index = () => {
             Join cities worldwide using SmartSignal to reduce congestion, improve safety, and create smarter urban mobility.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/dashboard">
+            <Link to="/auth">
               <Button size="lg" variant="secondary" className="shadow-elegant">
                 <Activity className="h-5 w-5 mr-2" />
                 Get Started

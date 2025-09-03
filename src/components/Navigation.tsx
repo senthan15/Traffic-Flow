@@ -1,14 +1,27 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Moon, Sun, Menu, X, Activity, Settings, BarChart3, AlertTriangle, Info } from "lucide-react";
+import { Link, useLocation, Navigate } from "react-router-dom";
+import { Moon, Sun, Menu, X, Activity, Settings, BarChart3, AlertTriangle, Info, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from "./ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const location = useLocation();
+  const { user, signOut, loading } = useAuth();
+
+  // Don't show navigation on auth page
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
+  // Redirect to auth if not authenticated (except on landing page)
+  if (!loading && !user && location.pathname !== '/') {
+    return <Navigate to="/auth" replace />;
+  }
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: Activity },
@@ -56,7 +69,7 @@ const Navigation = () => {
             })}
           </div>
 
-          {/* Theme Toggle & Mobile Menu */}
+          {/* Theme Toggle, Auth & Mobile Menu */}
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
@@ -69,6 +82,33 @@ const Navigation = () => {
                 <Moon className="h-5 w-5 text-primary" />
               }
             </Button>
+            
+            {user ? (
+              <div className="hidden sm:flex items-center space-x-2">
+                <Badge variant="secondary" className="bg-muted/50">
+                  <User className="h-3 w-3 mr-1" />
+                  {user.email}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={signOut}
+                  className="text-muted-foreground hover:text-destructive rounded-lg"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden lg:ml-2 lg:inline">Sign Out</span>
+                </Button>
+              </div>
+            ) : (
+              location.pathname === '/' && (
+                <Link to="/auth">
+                  <Button variant="secondary" size="sm" className="hidden sm:flex">
+                    <User className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+              )
+            )}
 
             {/* Mobile menu button */}
             <Button
@@ -103,11 +143,42 @@ const Navigation = () => {
                     <Icon className="h-4 w-4" />
                     <span className="font-medium">{item.name}</span>
                   </Link>
-                );
-              })}
+                  );
+                })}
+                
+                {/* Mobile Auth */}
+                {user ? (
+                  <div className="border-t border-border pt-2 space-y-2">
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <Badge variant="secondary" className="bg-muted/50">
+                        <User className="h-3 w-3 mr-1" />
+                        {user.email}
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={signOut}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  location.pathname === '/' && (
+                    <div className="border-t border-border pt-2">
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
+                        <Button variant="secondary" size="sm" className="w-full mx-3">
+                          <User className="h-4 w-4 mr-2" />
+                          Sign In
+                        </Button>
+                      </Link>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </nav>
   );

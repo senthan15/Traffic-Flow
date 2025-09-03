@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,16 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, Shield, UserCheck } from 'lucide-react';
+import { AlertCircle, Shield, UserCheck, KeyRound, Mail } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('signin');
+  const [activeTab, setActiveTab] = useState(mode === 'reset' ? 'reset' : 'signin');
 
   // Redirect if already authenticated
   if (user && !loading) {
@@ -47,6 +53,7 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccess('');
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
@@ -60,7 +67,12 @@ export default function Auth() {
       return;
     }
 
-    const { error } = await signUp(email, password);
+    const metadata = {
+      first_name: firstName,
+      last_name: lastName,
+    };
+
+    const { error } = await signUp(email, password, metadata);
     
     if (error) {
       if (error.message.includes('User already registered')) {
@@ -69,8 +81,24 @@ export default function Auth() {
         setError(error.message || 'An error occurred during sign up.');
       }
     } else {
-      setError('');
-      alert('Check your email for a confirmation link to complete your registration.');
+      setSuccess('Check your email for a confirmation link to complete your registration.');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    const { error } = await resetPassword(email);
+    
+    if (error) {
+      setError(error.message || 'An error occurred while sending the reset email.');
+    } else {
+      setSuccess('Check your email for a password reset link.');
     }
     
     setIsLoading(false);
@@ -104,9 +132,10 @@ export default function Auth() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="reset">Reset Password</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
@@ -135,10 +164,10 @@ export default function Auth() {
                       className="bg-background/50"
                     />
                   </div>
-                  {error && (
-                    <Alert variant="destructive">
+                  {(error || success) && (
+                    <Alert variant={error ? "destructive" : "default"}>
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription>{error || success}</AlertDescription>
                     </Alert>
                   )}
                   <Button
@@ -163,6 +192,30 @@ export default function Auth() {
               
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first-name">First Name</Label>
+                      <Input
+                        id="first-name"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last-name">Last Name</Label>
+                      <Input
+                        id="last-name"
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="bg-background/50"
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
@@ -199,10 +252,10 @@ export default function Auth() {
                       className="bg-background/50"
                     />
                   </div>
-                  {error && (
-                    <Alert variant="destructive">
+                  {(error || success) && (
+                    <Alert variant={error ? "destructive" : "default"}>
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription>{error || success}</AlertDescription>
                     </Alert>
                   )}
                   <Button
@@ -222,6 +275,56 @@ export default function Auth() {
                       </div>
                     )}
                   </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="reset" className="space-y-4">
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-background/50"
+                    />
+                  </div>
+                  {(error || success) && (
+                    <Alert variant={error ? "destructive" : "default"}>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error || success}</AlertDescription>
+                    </Alert>
+                  )}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                        <span>Sending reset link...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4" />
+                        <span>Send Reset Link</span>
+                      </div>
+                    )}
+                  </Button>
+                  <div className="text-center">
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      onClick={() => setActiveTab('signin')}
+                      className="text-sm"
+                    >
+                      Back to Sign In
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "./ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
+import ProfileModal from "./ProfileModal";
 import { cn } from "@/lib/utils";
 
 const Navigation = () => {
@@ -85,10 +86,7 @@ const Navigation = () => {
             
             {user ? (
               <div className="hidden sm:flex items-center space-x-2">
-                <Badge variant="secondary" className="bg-muted/50">
-                  <User className="h-3 w-3 mr-1" />
-                  {user.email}
-                </Badge>
+                <ProfileModal />
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -149,18 +147,16 @@ const Navigation = () => {
                 {/* Mobile Auth */}
                 {user ? (
                   <div className="border-t border-border pt-2 space-y-2">
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <Badge variant="secondary" className="bg-muted/50">
-                        <User className="h-3 w-3 mr-1" />
-                        {user.email}
-                      </Badge>
+                    <div className="px-3 py-2 space-y-2">
+                      <ProfileModal />
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={signOut}
-                        className="text-muted-foreground hover:text-destructive"
+                        className="w-full justify-start text-muted-foreground hover:text-destructive"
                       >
-                        <LogOut className="h-4 w-4" />
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
                       </Button>
                     </div>
                   </div>

@@ -1,1 +1,4 @@
 project_id = "ecjmpcbkarhaasshxyfp"
+
+[functions.handle-post-creation]
+verify_jwt = true

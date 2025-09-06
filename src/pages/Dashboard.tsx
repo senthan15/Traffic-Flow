@@ -14,38 +14,124 @@ import {
   Users,
   Timer
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for demonstration
-const mockIntersections = [
-  { id: 1, name: "Main St & 1st Ave", status: "online", congestion: 45, vehicles: 23, signals: { red: 30, yellow: 5, green: 25 } },
-  { id: 2, name: "Broadway & 2nd St", status: "online", congestion: 78, vehicles: 42, signals: { red: 45, yellow: 3, green: 22 } },
-  { id: 3, name: "Oak Ave & 3rd St", status: "maintenance", congestion: 12, vehicles: 8, signals: { red: 60, yellow: 5, green: 15 } },
-  { id: 4, name: "Pine St & 4th Ave", status: "online", congestion: 56, vehicles: 31, signals: { red: 35, yellow: 5, green: 30 } },
-];
+interface Intersection {
+  id: string;
+  name: string;
+  location: string;
+  status: 'active' | 'maintenance' | 'offline' | 'warning';
+  latitude?: number;
+  longitude?: number;
+}
+
+interface TrafficData {
+  id: string;
+  intersection_id: string;
+  vehicle_count: number;
+  congestion_level: number;
+  average_speed: number;
+  timestamp: string;
+}
+
+interface SignalTiming {
+  id: string;
+  intersection_id: string;
+  red_time: number;
+  yellow_time: number;
+  green_time: number;
+  cycle_length: number;
+}
+
+interface DashboardData {
+  id: string;
+  name: string;
+  status: string;
+  congestion: number;
+  vehicles: number;
+  signals: {
+    red: number;
+    yellow: number;
+    green: number;
+  };
+}
 
 const Dashboard = () => {
-  const [liveData, setLiveData] = useState(mockIntersections);
+  const [liveData, setLiveData] = useState<DashboardData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveData(prev => prev.map(intersection => ({
-        ...intersection,
-        congestion: Math.max(0, Math.min(100, intersection.congestion + (Math.random() - 0.5) * 10)),
-        vehicles: Math.max(0, intersection.vehicles + Math.floor((Math.random() - 0.5) * 6)),
-      })));
+  // Fetch real-time data from Supabase
+  const fetchTrafficData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch intersections
+      const { data: intersections, error: intersectionsError } = await supabase
+        .from('intersections')
+        .select('*');
+      
+      if (intersectionsError) throw intersectionsError;
+      
+      // Fetch latest traffic data for each intersection
+      const { data: trafficData, error: trafficError } = await supabase
+        .from('traffic_data')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      
+      if (trafficError) throw trafficError;
+      
+      // Fetch signal timing for each intersection
+      const { data: signalTiming, error: signalError } = await supabase
+        .from('signal_timing')
+        .select('*');
+      
+      if (signalError) throw signalError;
+      
+      // Combine data for dashboard
+      const dashboardData = intersections?.map(intersection => {
+        const latestTraffic = trafficData?.find(td => td.intersection_id === intersection.id);
+        const signals = signalTiming?.find(st => st.intersection_id === intersection.id);
+        
+        return {
+          id: intersection.id,
+          name: intersection.name,
+          status: intersection.status === 'active' ? 'online' : intersection.status,
+          congestion: latestTraffic?.congestion_level || 0,
+          vehicles: latestTraffic?.vehicle_count || 0,
+          signals: {
+            red: signals?.red_time || 30,
+            yellow: signals?.yellow_time || 5,
+            green: signals?.green_time || 25,
+          }
+        };
+      }) || [];
+      
+      setLiveData(dashboardData);
       setLastUpdate(new Date());
-    }, 3000);
+    } catch (error) {
+      console.error('Error fetching traffic data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchTrafficData();
+    
+    // Set up real-time updates every 5 seconds
+    const interval = setInterval(fetchTrafficData, 5000);
+    
     return () => clearInterval(interval);
   }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "online": return "bg-accent";
+      case "online": 
+      case "active": return "bg-accent";
       case "maintenance": return "bg-warning";
       case "offline": return "bg-destructive";
+      case "warning": return "bg-warning";
       default: return "bg-muted";
     }
   };
@@ -142,7 +228,13 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            {liveData.map((intersection) => (
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Loading traffic data...</p>
+              </div>
+            ) : (
+              liveData.map((intersection) => (
               <div 
                 key={intersection.id} 
                 className="p-4 border border-border rounded-lg bg-card hover:shadow-elegant transition-all duration-300 animate-fade-in"
@@ -202,7 +294,8 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

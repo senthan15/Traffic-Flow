@@ -46,6 +46,39 @@ export type Database = {
           },
         ]
       }
+      intersections: {
+        Row: {
+          created_at: string | null
+          id: string
+          latitude: number | null
+          location: string
+          longitude: number | null
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          location: string
+          longitude?: number | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -147,6 +180,123 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      signal_timing: {
+        Row: {
+          cycle_length: number | null
+          green_time: number
+          id: string
+          intersection_id: string | null
+          red_time: number
+          updated_at: string | null
+          yellow_time: number
+        }
+        Insert: {
+          cycle_length?: number | null
+          green_time?: number
+          id?: string
+          intersection_id?: string | null
+          red_time?: number
+          updated_at?: string | null
+          yellow_time?: number
+        }
+        Update: {
+          cycle_length?: number | null
+          green_time?: number
+          id?: string
+          intersection_id?: string | null
+          red_time?: number
+          updated_at?: string | null
+          yellow_time?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_timing_intersection_id_fkey"
+            columns: ["intersection_id"]
+            isOneToOne: false
+            referencedRelation: "intersections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traffic_data: {
+        Row: {
+          average_speed: number | null
+          congestion_level: number | null
+          created_at: string | null
+          id: string
+          intersection_id: string | null
+          timestamp: string | null
+          vehicle_count: number
+        }
+        Insert: {
+          average_speed?: number | null
+          congestion_level?: number | null
+          created_at?: string | null
+          id?: string
+          intersection_id?: string | null
+          timestamp?: string | null
+          vehicle_count?: number
+        }
+        Update: {
+          average_speed?: number | null
+          congestion_level?: number | null
+          created_at?: string | null
+          id?: string
+          intersection_id?: string | null
+          timestamp?: string | null
+          vehicle_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_data_intersection_id_fkey"
+            columns: ["intersection_id"]
+            isOneToOne: false
+            referencedRelation: "intersections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traffic_events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_type: string
+          id: string
+          intersection_id: string | null
+          resolved_at: string | null
+          severity: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_type: string
+          id?: string
+          intersection_id?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          intersection_id?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_events_intersection_id_fkey"
+            columns: ["intersection_id"]
+            isOneToOne: false
+            referencedRelation: "intersections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

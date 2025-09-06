@@ -2,29 +2,15 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Activity, 
-  ArrowRight, 
-  BarChart3, 
-  Settings, 
-  AlertTriangle, 
-  Zap,
-  MapPin,
-  Clock,
-  Users,
-  TrendingUp
-} from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Settings, AlertTriangle, Zap, MapPin, Clock, Users, TrendingUp } from "lucide-react";
 import heroImage from "@/assets/smart-city-hero.jpg";
-
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        >
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
+        backgroundImage: `url(${heroImage})`
+      }}>
           <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/70 to-background/50"></div>
         </div>
         
@@ -209,15 +195,11 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/about">
-              <Button variant="outline" size="lg" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10">
-                Learn More
-              </Button>
+              
             </Link>
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

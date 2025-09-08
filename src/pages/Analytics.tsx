@@ -1,6 +1,15 @@
+import { useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { 
   BarChart, 
   Bar, 
@@ -22,8 +31,11 @@ import {
   Activity, 
   Download,
   Calendar,
-  Filter
+  Filter,
+  X
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 // Mock data for charts
 const hourlyTraffic = [
@@ -59,6 +71,92 @@ const signalStatusData = [
 ];
 
 const Analytics = () => {
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    to: new Date()
+  });
+  
+  const [filters, setFilters] = useState({
+    intersections: [] as string[],
+    timeOfDay: 'all',
+    signalStatus: [] as string[],
+    minWaitTime: '',
+    maxWaitTime: ''
+  });
+
+  const availableIntersections = [
+    'Main St & 1st Ave',
+    'Broadway & 2nd St', 
+    'Oak Ave & 3rd St',
+    'Pine St & 4th Ave'
+  ];
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleIntersectionToggle = (intersection: string) => {
+    setFilters(prev => ({
+      ...prev,
+      intersections: prev.intersections.includes(intersection)
+        ? prev.intersections.filter(i => i !== intersection)
+        : [...prev.intersections, intersection]
+    }));
+  };
+
+  const handleStatusToggle = (status: string) => {
+    setFilters(prev => ({
+      ...prev,
+      signalStatus: prev.signalStatus.includes(status)
+        ? prev.signalStatus.filter(s => s !== status)
+        : [...prev.signalStatus, status]
+    }));
+  };
+
+  const exportToCSV = () => {
+    const csvData = [
+      ['Intersection', 'Average Wait Time', 'Violations'],
+      ...intersectionData.map(item => [item.name, item.avgWait, item.violations])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `traffic-analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Report Exported",
+      description: "Your analytics report has been downloaded as CSV."
+    });
+  };
+
+  const exportToPDF = () => {
+    // For a real implementation, you would use a library like jsPDF
+    toast({
+      title: "PDF Export",
+      description: "PDF export functionality would be implemented with a PDF library."
+    });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      intersections: [],
+      timeOfDay: 'all',
+      signalStatus: [],
+      minWaitTime: '',
+      maxWaitTime: ''
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
@@ -68,18 +166,166 @@ const Analytics = () => {
           <p className="text-muted-foreground">Historical data and performance insights</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" className="bg-gradient-card shadow-card">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter Data
-          </Button>
-          <Button variant="outline" className="bg-gradient-card shadow-card">
-            <Calendar className="h-4 w-4 mr-2" />
-            Date Range
-          </Button>
-          <Button className="bg-gradient-primary shadow-elegant">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
+          {/* Filter Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gradient-card shadow-card">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter Data
+                {(filters.intersections.length > 0 || filters.signalStatus.length > 0 || filters.timeOfDay !== 'all') && (
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {filters.intersections.length + filters.signalStatus.length + (filters.timeOfDay !== 'all' ? 1 : 0)}
+                  </Badge>
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Filter Traffic Data</DialogTitle>
+                <DialogDescription>
+                  Select filters to customize your analytics view
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Intersections Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Intersections</Label>
+                  <div className="grid grid-cols-1 gap-2 mt-2">
+                    {availableIntersections.map((intersection) => (
+                      <div key={intersection} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={intersection}
+                          checked={filters.intersections.includes(intersection)}
+                          onCheckedChange={() => handleIntersectionToggle(intersection)}
+                        />
+                        <Label htmlFor={intersection} className="text-sm">
+                          {intersection}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Time of Day Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Time of Day</Label>
+                  <Select value={filters.timeOfDay} onValueChange={(value) => handleFilterChange('timeOfDay', value)}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select time period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Day</SelectItem>
+                      <SelectItem value="morning">Morning (6AM-12PM)</SelectItem>
+                      <SelectItem value="afternoon">Afternoon (12PM-6PM)</SelectItem>
+                      <SelectItem value="evening">Evening (6PM-12AM)</SelectItem>
+                      <SelectItem value="night">Night (12AM-6AM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* Signal Status Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Signal Status</Label>
+                  <div className="grid grid-cols-1 gap-2 mt-2">
+                    {['Online', 'Maintenance', 'Offline'].map((status) => (
+                      <div key={status} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={status}
+                          checked={filters.signalStatus.includes(status)}
+                          onCheckedChange={() => handleStatusToggle(status)}
+                        />
+                        <Label htmlFor={status} className="text-sm">
+                          {status}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={clearFilters} size="sm">
+                    <X className="h-4 w-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Date Range Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="bg-gradient-card shadow-card">
+                <Calendar className="h-4 w-4 mr-2" />
+                {dateRange.from && dateRange.to ? (
+                  `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
+                ) : (
+                  "Date Range"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="p-3">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">From Date</Label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateRange.from}
+                      onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-sm font-medium">To Date</Label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateRange.to}
+                      onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Export Menu */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button className="bg-gradient-primary shadow-elegant">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48" align="end">
+              <div className="space-y-2">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={exportToCSV}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={exportToPDF}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

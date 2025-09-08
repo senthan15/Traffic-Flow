@@ -5,7 +5,6 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Settings, 
   Play, 
@@ -14,12 +13,10 @@ import {
   Zap, 
   MapPin,
   Save,
-  AlertTriangle,
-  Brain
+  AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import AIMonitoringSystem from "@/components/AIMonitoringSystem";
 
 interface ControlIntersection {
   id: string;
@@ -170,22 +167,9 @@ const Control = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="manual" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="manual" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Manual Control</span>
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="flex items-center space-x-2">
-            <Brain className="h-4 w-4" />
-            <span>AI Monitoring</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="manual" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Intersection Selection */}
-            <Card className="bg-gradient-card shadow-card border-0 lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Intersection Selection */}
+        <Card className="bg-gradient-card shadow-card border-0 lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <MapPin className="h-5 w-5 text-primary" />
@@ -355,17 +339,9 @@ const Control = () => {
             </div>
             </>
             )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="ai" className="space-y-6">
-          <AIMonitoringSystem 
-            selectedIntersectionId={currentIntersection?.id} 
-          />
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

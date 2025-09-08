@@ -2,6 +2,3 @@ project_id = "ecjmpcbkarhaasshxyfp"
 
 [functions.handle-post-creation]
 verify_jwt = true
-
-[functions.ai-traffic-optimizer]
-verify_jwt = false
